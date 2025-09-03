@@ -1,0 +1,65 @@
+name: Build and Release
+
+on:
+  push:
+    tags:
+      - 'v*'  # Trigger on tags like v0.1
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up C++ environment
+        uses: actions/setup-gcc@v1
+
+      - name: Create build directory
+        run: mkdir -p build
+
+      - name: Compile make-flagslowfix
+        run: g++ -O2 -march=native -Wall -Wextra -std=c++17 src/main.cpp -o build/make-flagslowfix
+
+      - name: Package tar.gz
+        run: tar czf build/make-flagslowfix-${GITHUB_REF_NAME}.tar.gz -C build make-flagslowfix
+
+      - name: Package tar.xz
+        run: tar cJf build/make-flagslowfix-${GITHUB_REF_NAME}.tar.xz -C build make-flagslowfix
+
+      - name: Build Pacman package
+        run: |
+          sudo pacman -S --needed --noconfirm base-devel
+          makepkg -s --noconfirm -C
+
+      - name: Upload release artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: make-flagslowfix-artifacts
+          path: |
+            build/make-flagslowfix
+            build/make-flagslowfix-${GITHUB_REF_NAME}.tar.gz
+            build/make-flagslowfix-${GITHUB_REF_NAME}.tar.xz
+            *.pkg.tar.zst  # pacman package
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download build artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: make-flagslowfix-artifacts
+          path: build/
+
+      - name: Create GitHub Release
+        uses: ncipollo/release-action@v1
+        with:
+          artifacts: |
+            build/make-flagslowfix
+            build/make-flagslowfix-${GITHUB_REF_NAME}.tar.gz
+            build/make-flagslowfix-${GITHUB_REF_NAME}.tar.xz
+            build/*.pkg.tar.zst
+          tag: ${{ github.ref_name }}
+          name: Release ${{ github.ref_name }}
