@@ -44,3 +44,9 @@ build/
 
 # debug information files
 *.dwo
+
+pkg/
+*
+
+src/build/
+*
