@@ -2,7 +2,7 @@
 
 CXX = g++
 CXXFLAGS = -O2 -march=native -Wall -Wextra -std=c++17
-SRC = src/main.cpp
+SRC = main.cpp
 TARGET = make-flagslowfix
 BUILD_DIR = build
 
